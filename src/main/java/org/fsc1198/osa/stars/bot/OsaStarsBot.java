@@ -3,14 +3,23 @@ package org.fsc1198.osa.stars.bot;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.fsc1198.osa.stars.logging.LogEntryAndExit;
+import org.fsc1198.osa.stars.service.RegistrationService;
+import org.fsc1198.osa.stars.service.StarService;
+import org.fsc1198.osa.stars.service.UserService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.fsc1198.osa.stars.bot.KeyboardMaker.GIVE_STAR_BUTTON_TITLE;
+import static org.fsc1198.osa.stars.bot.KeyboardMaker.HELP_BUTTON_TITLE;
+import static org.fsc1198.osa.stars.bot.KeyboardMaker.MY_STARS_BUTTON_TITLE;
+import static org.fsc1198.osa.stars.bot.KeyboardMaker.SUPERSTAR_BUTTON_TITLE;
+import static org.fsc1198.osa.stars.bot.KeyboardMaker.TOXIC_BUTTON_TITLE;
 import static org.mascara.notifier.util.TelegramUtils.extractChatId;
 import static org.mascara.notifier.util.TelegramUtils.hasTextMessage;
 
@@ -20,7 +29,23 @@ import static org.mascara.notifier.util.TelegramUtils.hasTextMessage;
 @RequiredArgsConstructor
 public class OsaStarsBot extends AbstractOsaStarNotifierBot {
 
+	private static final String EMPTY_MESSAGE = "EMPTY_MESSAGE";
+	private static final String START_REGISTRATION_OPERATION = "/registration";
+	private static final int MAX_USERNAME_LENGTH = 50;
+
+	//todo move to separate class
+	private static final String REGISTRATION_MESSAGE = "Регистрация не пройдена. \nЧтобы пройти регистрацию, отправь сообщение вида: \n/registration Иванов Иван\nПожалуйста, указывай имя корректно - его будут использовать для начисления звездочек.";
+	private static final String GREETING_MESSAGE = "Привет '%s'. Ты успешно зарегестрирован. \nТеперь ты можешь получать звездочки от коллег.";
+	private static final String NAME_IS_TOO_LONG_MESSAGE = "Слишком длинное имя";
+	private static final String HELP_MESSAGE = "Тут будет инфа про то как оно всё равботает. \nНо сейчас её` нет. \nТак бывает.";
+	private static final String STAR_GRANTED_MESSAGE = "Пользователь '%s' успешно получил звездочку";
+	private static final String DONT_AUTOSTAR_MESSAGE = "Что-то пошло не так. Если ты хотел проставить звездочку сам себе, то так нельзя. Но можешь договорится с кем-то, и он поставит тебе хоть 100 штук :) ";
+	private static final String ONCE_REG_MESSAGE = "Зарегестрироваться можно только один раз.";
+
 	private final KeyboardMaker keyboardMaker;
+	private final StarService starService;
+	private final UserService userService;
+	private final RegistrationService registrationService;
 
 	@Value("${telegram.bot.name}")
 	private String botName;
@@ -42,26 +67,83 @@ public class OsaStarsBot extends AbstractOsaStarNotifierBot {
 	@LogEntryAndExit
 	public void onUpdateReceived(Update update) {
 		var chatId = extractChatId(update);
+		String messageText = extractMessageText(update);
+
+		boolean isUserRegistered = handleUserRegistration(update, chatId, messageText);
+		if (!isUserRegistered) {
+			return;
+		}
+
 		sendMainKeyboard(chatId);
 
 		if (!hasTextMessage(update)) {
 			if (update.hasCallbackQuery()) {
-				String text = update.getCallbackQuery().getData();
-				sendTextMessage(chatId, text);
+				String targetUsername = update.getCallbackQuery().getData();
+				try {
+					starService.giveStar(targetUsername, chatId);
+				} catch (Exception e) {
+					sendTextMessage(chatId, DONT_AUTOSTAR_MESSAGE);
+					return;
+				}
+				sendTextMessage(chatId, String.format(STAR_GRANTED_MESSAGE, targetUsername));
 				return;
 			}
 			return;
 		}
-		if (update.getMessage().getText().equals(GIVE_STAR_BUTTON_TITLE)) {
-			List<String> nameList = List.of(
-					UUID.randomUUID().toString(),
-					UUID.randomUUID().toString(),
-					UUID.randomUUID().toString()
-			);
-			tryExecute(keyboardMaker.getKeyboardMessage2(chatId, nameList));
-		} else {
-			sendTextMessage(chatId, update.getMessage().getText());
+
+		//todo move to separate class
+		switch (messageText) {
+			case GIVE_STAR_BUTTON_TITLE:
+				List<String> users = userService.getAllUserNames();
+				tryExecute(keyboardMaker.getKeyboardMessage2(chatId, users));
+				return;
+			case MY_STARS_BUTTON_TITLE:
+
+				return;
+			case SUPERSTAR_BUTTON_TITLE:
+
+				return;
+			case TOXIC_BUTTON_TITLE:
+
+				return;
+			case HELP_BUTTON_TITLE:
+				sendTextMessage(chatId, HELP_MESSAGE);
+				return;
 		}
+
+	}
+
+	private boolean handleUserRegistration(Update update, Long chatId, String messageText) {
+		if (registrationService.isUserRegistered(chatId)) {
+			if(isRegOperation(update, messageText)) {
+				sendTextMessage(chatId, ONCE_REG_MESSAGE);
+			}
+			return true;
+		}
+		if (isRegOperation(update, messageText)) {
+			String username = messageText.replace(START_REGISTRATION_OPERATION, "").trim();
+			if (username.length() > MAX_USERNAME_LENGTH) {
+				sendTextMessage(chatId, NAME_IS_TOO_LONG_MESSAGE);
+				return false;
+			}
+			registrationService.registerUser(chatId, username);
+			sendTextMessage(chatId, String.format(GREETING_MESSAGE, username));
+			return true;
+		} else {
+			sendTextMessage(chatId, REGISTRATION_MESSAGE);
+			return false;
+		}
+	}
+
+	private static boolean isRegOperation(Update update, String messageText) {
+		return hasTextMessage(update) && messageText.startsWith(START_REGISTRATION_OPERATION);
+	}
+
+	private static String extractMessageText(Update update) {
+		return Optional.ofNullable(update)
+				.map(Update::getMessage)
+				.map(Message::getText)
+				.orElse(EMPTY_MESSAGE);
 	}
 
 	private void sendMainKeyboard(Long chatId) {
