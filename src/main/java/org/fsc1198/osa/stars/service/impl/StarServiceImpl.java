@@ -10,10 +10,12 @@ import org.fsc1198.osa.stars.repository.SprintRepository;
 import org.fsc1198.osa.stars.repository.StarRepository;
 import org.fsc1198.osa.stars.repository.UserRepository;
 import org.fsc1198.osa.stars.service.StarService;
+import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 import static java.util.Objects.isNull;
 
@@ -39,6 +41,24 @@ public class StarServiceImpl implements StarService {
 			throw new RuntimeException("user tried to give a star to himself");
 		}
 		addStarToTargetUser(targetUser, donorUser, currentSprint);
+	}
+
+	@Override
+	public int getAllStarsAmount(Long chatId) {
+		return starRepository.findAllByUserId_ChatId(chatId).size();
+	}
+
+	@Override
+	public Pair<String, Integer> getSuperstarUsernameAndStars() {
+		User superstar = userRepository.findTopByOrderByStarsDesc();
+		return Pair.of(superstar.getName(), getAllStarsAmount(superstar.getChatId()));
+	}
+
+	@Override
+	public Pair<Long, Integer> getStarsAmountForCurrentSprint(Long chatId) {
+		Sprint currentSprint = getOrStartNewSprint();
+		List<Star> starsForCurrentSprint = starRepository.findAllBySprintIdAndUserId_ChatId(currentSprint.getId(), chatId);
+		return Pair.of(currentSprint.getSprintNumber(), starsForCurrentSprint.size());
 	}
 
 	private Sprint getOrStartNewSprint() {

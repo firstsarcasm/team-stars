@@ -17,7 +17,7 @@ public class KeyboardMaker {
 	public static final String GIVE_STAR_BUTTON_TITLE = "Дать звездочку";
 	public static final String MY_STARS_BUTTON_TITLE = "Мои звездочки";
 	public static final String SUPERSTAR_BUTTON_TITLE = "Лидер по звездочкам в спринте";
-	public static final String TOXIC_BUTTON_TITLE = "Токичность";
+	public static final String TOXIC_BUTTON_TITLE = "Токсичность";
 	public static final String HELP_BUTTON_TITLE = "Помощь";
 
 	private static final String HEADER_TEXT = "-----------";

@@ -12,6 +12,8 @@ public interface UserRepository extends CrudRepository<User, Long> {
 	User findByName(String name);
 	User findByChatId(Long chatId);
 
+	User findTopByOrderByStarsDesc();
+
 	@Override
 	List<User> findAll();
 }
