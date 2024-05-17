@@ -2,6 +2,8 @@ package org.fsc1198.osa.stars.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.fsc1198.osa.stars.dto.GivenStarDto;
+import org.fsc1198.osa.stars.dto.StarUserProjection;
 import org.fsc1198.osa.stars.entity.Sprint;
 import org.fsc1198.osa.stars.entity.Star;
 import org.fsc1198.osa.stars.entity.User;
@@ -32,7 +34,7 @@ public class StarServiceImpl implements StarService {
 	@LogEntryAndExit
 	@Override
 	//todo fix different sources for users?
-	public void giveStar(String targetUserName, Long donorChatId) {
+	public GivenStarDto giveStar(String targetUserName, Long donorChatId) {
 		Sprint currentSprint = getOrStartNewSprint();
 
 		User targetUser = userRepository.findByName(targetUserName);
@@ -41,6 +43,10 @@ public class StarServiceImpl implements StarService {
 			throw new RuntimeException("user tried to give a star to himself");
 		}
 		addStarToTargetUser(targetUser, donorUser, currentSprint);
+		return GivenStarDto.builder()
+				.donorUser(donorUser)
+				.targetUser(targetUser)
+				.build();
 	}
 
 	@Override
@@ -49,9 +55,18 @@ public class StarServiceImpl implements StarService {
 	}
 
 	@Override
-	public Pair<String, Integer> getSuperstarUsernameAndStars() {
-		User superstar = userRepository.findTopByOrderByStarsDesc();
-		return Pair.of(superstar.getName(), getAllStarsAmount(superstar.getChatId()));
+	public StarUserProjection getSuperstarForCurrentSprintUsernameAndStars() {
+		return userRepository.findSuperstarForCurrentSprint();
+	}
+
+	@Override
+	public List<StarUserProjection> getAllStarsStats() {
+		return userRepository.findAllStarsStatistics();
+	}
+
+	@Override
+	public List<StarUserProjection> getCurrentSprintStarsStats() {
+		return userRepository.findCurrentSprintStarsStatistics();
 	}
 
 	@Override

@@ -18,6 +18,7 @@ public class KeyboardMaker {
 	public static final String MY_STARS_BUTTON_TITLE = "Мои звездочки";
 	public static final String SUPERSTAR_BUTTON_TITLE = "Лидер по звездочкам в спринте";
 	public static final String TOXIC_BUTTON_TITLE = "Токсичность";
+	public static final String STATS_BUTTON_TITLE = "Статистика";
 	public static final String HELP_BUTTON_TITLE = "Помощь";
 
 	private static final String HEADER_TEXT = "-----------";
@@ -46,11 +47,13 @@ public class KeyboardMaker {
 		var row2 = new KeyboardRow();
 		var row3 = new KeyboardRow();
 		var row4 = new KeyboardRow();
+		var row5 = new KeyboardRow();
 
 		KeyboardButton giveStarButton = new KeyboardButton(GIVE_STAR_BUTTON_TITLE);
 		KeyboardButton myStarsButton = new KeyboardButton(MY_STARS_BUTTON_TITLE);
 		KeyboardButton superstarButton = new KeyboardButton(SUPERSTAR_BUTTON_TITLE);
 		KeyboardButton toxicButton = new KeyboardButton(TOXIC_BUTTON_TITLE);
+		KeyboardButton statsButton = new KeyboardButton(STATS_BUTTON_TITLE);
 		KeyboardButton helpButton = new KeyboardButton(HELP_BUTTON_TITLE);
 
 		row.add(giveStarButton);
@@ -58,8 +61,9 @@ public class KeyboardMaker {
 		row2.add(superstarButton);
 		row3.add(toxicButton);
 		row4.add(helpButton);
+		row5.add(statsButton);
 
-		List<KeyboardRow> keyboardRows = List.of(row, row2, row3, row4);
+		List<KeyboardRow> keyboardRows = List.of(row, row2, row3, row4, row5);
 		ReplyKeyboardMarkup keyboardMarkup = new ReplyKeyboardMarkup(keyboardRows);
 		keyboardMarkup.setResizeKeyboard(true);
 

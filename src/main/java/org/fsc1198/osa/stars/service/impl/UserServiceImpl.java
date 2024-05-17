@@ -26,4 +26,13 @@ public class UserServiceImpl implements UserService {
 				.map(User::getName)
 				.collect(Collectors.toList());
 	}
+
+	@Override
+	@LogEntryAndExit
+	public List<Long> getAllUserChatIds() {
+		return userRepository.findAll()
+				.stream()
+				.map(User::getChatId)
+				.collect(Collectors.toList());
+	}
 }
