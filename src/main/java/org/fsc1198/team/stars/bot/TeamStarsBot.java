@@ -30,7 +30,7 @@ import static org.fsc1198.team.stars.bot.KeyboardMaker.TOXIC_BUTTON_TITLE;
 import static org.springframework.util.ObjectUtils.isEmpty;
 
 //todo дать токсичную звездочку
-//todo самый токсичный должен назначить себя сам, по умолчанию Настя.
+//todo самый токсичный должен назначить себя сам
 @Slf4j
 @Service
 @RequiredArgsConstructor
